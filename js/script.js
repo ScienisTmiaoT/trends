@@ -1,5 +1,5 @@
 // avoid browser caches data.js by inserting an unique identifier
-var csv_url = "https://raw.githubusercontent.com/ScienisTmiaoT/poptags/master/monthly.csv";
+var csv_url = "https://raw.githubusercontent.com/ScienisTmiaoT/trends/master/data/monthly.csv";
 var latest_url = csv_url + '?v=' + Date.now();
 // set the dimensions and margins of the graph
 var margin = {
