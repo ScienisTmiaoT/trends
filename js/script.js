@@ -113,6 +113,7 @@ function drive(nameMap) {
         var svg = d3.select(parent_id)
             .append("svg")
             .attr("id", svg_id)
+            .attr("class", "hide")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
@@ -121,9 +122,9 @@ function drive(nameMap) {
 
         domMap[svg_id] = document.querySelector("#" + svg_id);
 
-        if (!is_default) {
-            d3.select("#" + svg_id).attr("class", "hide");
-            d3.select(select_id).attr("class", "hide");
+        if (is_default) {
+            d3.select("#" + svg_id).attr("class", "");
+            d3.select(select_id).attr("class", "");
         }
 
         //Read the data
@@ -276,6 +277,7 @@ const pSelect = typeSelect.parentNode;
 for (var c of config) {
     var selectList = document.createElement("select");
     selectList.id = c.select_id;
+    selectList.className = "hide";
     pSelect.insertBefore(selectList, typeSelect.nextSibling);
     domMap[c.select_id] = selectList;
 }
