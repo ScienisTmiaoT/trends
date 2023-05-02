@@ -10,28 +10,45 @@
 
 <body>
   <div class="bg-img">
-  <div class="center-padding">
-        <div class="container">
-      <div class="topnav">
-        <a id="logo"></a>
+    <div class="center-padding">
+      <div class="container">
+        <div class="topnav">
+          <a id="logo"></a>
+
         </div>
-        </div>
-    <div class="padding-child">
+      </div>
+      <div class="toggleWrapper">
+        <input type="checkbox" class="dn" id="dn"/>
+        <label for="dn" class="toggle">
+          <span class="toggle__handler">
+            <span class="crater crater--1"></span>
+            <span class="crater crater--2"></span>
+            <span class="crater crater--3"></span>
+          </span>
+          <span class="star star--1"></span>
+          <span class="star star--2"></span>
+          <span class="star star--3"></span>
+          <span class="star star--4"></span>
+          <span class="star star--5"></span>
+          <span class="star star--6"></span>
+        </label>
+      </div>
+      <div class="padding-child">
+      </div>
+    </div>
+    <div class="center-screen">
+      <div class="center-tool">
+        <!-- Initialize a select button -->
+        <!-- <select id="monthly_select"></select>
+        <select id="daily_select"></select> -->
+        <select id="type_select"></select>
+        <button id="switchBtn" class="button-16" role="button">Monthly</button>
+      </div>
+
+      <!-- Create a div where the graph will take place -->
+      <div id="my_dataviz"></div>
     </div>
   </div>
-  <div class="center-screen">
-    <div class="center-tool">
-          <!-- Initialize a select button -->
-    <select id="monthly_select"></select>
-    <select id="daily_select"></select>
-      <button id="switchBtn" class="button-16" role="button">Monthly</button>
-    <div></div>
-</div>
-
-    <!-- Create a div where the graph will take place -->
-    <div id="my_dataviz"></div>
-  </div>
-</div>
 
   <script src="https://d3js.org/d3.v4.js"></script>
   <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>

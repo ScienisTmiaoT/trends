@@ -9,30 +9,112 @@ var margin = {
     },
     width = 1000 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
+filenames = ["Monthly", "Daily"]
+types = ["movie", "book", "music"]
+languages = ["cn", 'en']
+svg_suffix = "_svg";
+select_suffix = "_select";
+domMap = {
 
-const config = [{
-        name: "Monthly",
-        csv_url: base_url + "monthly.csv" + '?v=' + Date.now(),
-        parent_id: "my_dataviz",
-        select_id: "monthly_select",
-        svg_id: "monthly_svg",
-        is_daily: false,
-        date_format: "%Y-%m",
-        defaultGroup: "Dire Straits",
-        is_default: true
+};
+
+defaultGroups = {
+    "movie": {
+        "cn": "巴斯特·基顿",
+        "en": "Buster Keaton"
     },
-    {
-        name: "Daily",
-        csv_url: base_url + "daily.csv" + '?v=' + Date.now(),
-        parent_id: "my_dataviz",
-        select_id: "daily_select",
-        svg_id: "daily_svg",
-        is_daily: true,
-        date_format: "%Y-%m-%d",
-        defaultGroup: "Dire Straits",
-        is_default: false
+    "music": {
+        "cn": "险峻海峡",
+        "en": "Dire Straits"
+    },
+    "book": {
+        "cn": "伊塔洛·卡尔维诺",
+        "en": "Italo Calvino"
     }
-]
+}
+
+var lanMap = {
+    type: {
+        "movie": "电影",
+        "music": "音乐",
+        "book": "书籍"
+    },
+    freq: {
+        "Daily": "日视图",
+        "Monthly": "月视图"
+    },
+    title: {
+        "cn": "豆趋势",
+        "en": "Trends"
+    }
+}
+
+//global 
+var isDaily = false;
+var isCN = true;
+updateTitle()
+var curType = "movie";
+
+var config = []
+var setDefault = true;
+for (var f of filenames) {
+    for (var t of types) {
+        for (var la of languages) {
+            var is_daily = f.toLowerCase() === "daily";
+            var id = f.toLowerCase() + "_" + t + "_" + la;
+            var c = {
+                name: f,
+                csv_url: base_url + id + ".csv" + '?v=' + Date.now(),
+                parent_id: "my_dataviz",
+                select_id: id + select_suffix,
+                svg_id: id + svg_suffix,
+                is_daily: is_daily,
+                date_format: is_daily ? "%Y-%m-%d" : "%Y-%m",
+                defaultGroup: defaultGroups[t][la],
+                is_default: setDefault
+            }
+            if (setDefault) {
+                isDaily = is_daily;
+                curType = isCN? lanMap.type[t] : t;
+            }
+            setDefault = false;
+            config.push(c);
+        }
+    }
+}
+
+const checkBox = document.querySelector("#dn");
+checkBox.addEventListener("change", function() {
+    isCN = !isCN;
+    curType = isCN ? lanMap.type[curType] : getType(curType);
+    updateOptions();
+    updateView(isDaily, curType, isCN);
+});
+
+const typeSelect = document.querySelector("#type_select");
+const pSelect = typeSelect.parentNode;
+for (var c of config) {
+    var selectList = document.createElement("select");
+    selectList.id = c.select_id;
+    pSelect.insertBefore(selectList, typeSelect.nextSibling);
+    domMap[c.select_id] = selectList;
+}
+
+typeSelect.addEventListener("change", function() {
+    curType = typeSelect.value;
+    updateView(isDaily, curType, isCN);
+});
+
+optionMap = {};
+for (var t of types) {
+    var option = document.createElement("option");
+    var v = isCN ? lanMap.type[t]: t;
+    option.value = v;
+    option.text = v;
+    typeSelect.appendChild(option);
+    optionMap[t] = option;
+}
+
 
 function draw(csv_url, parent_id, select_id, svg_id, is_daily, date_format, defaultGroup, is_default) {
     parent_id = "#" + parent_id;
@@ -46,6 +128,8 @@ function draw(csv_url, parent_id, select_id, svg_id, is_daily, date_format, defa
         .append("g")
         .attr("transform",
             "translate(" + margin.left + "," + margin.top + ")");
+
+    domMap[svg_id] = document.querySelector("#" + svg_id);
 
     if (!is_default) {
         d3.select("#" + svg_id).attr("class", "hide");
@@ -98,6 +182,7 @@ function draw(csv_url, parent_id, select_id, svg_id, is_daily, date_format, defa
         var myColor = d3.scaleOrdinal()
             .domain(allGroup)
             .range(d3.schemeSet2);
+
 
         // Add X axis --> it is a date format
         var x = d3.scaleTime()
@@ -178,35 +263,69 @@ for (var c of config) {
 }
 
 const toggleBtn = document.querySelector("#switchBtn");
-const toggledViews = {
-    "Daily": [],
-    "Monthly": []
-}
-
-for (var c of config) {
-    if (c.is_default) {
-        toggleBtn.textContent = c.name;
-    }
-    toggledViews[c.name].push(document.querySelector("#" + c.svg_id));
-    toggledViews[c.name].push(document.querySelector("#" + c.select_id));
-}
+toggleBtn.textContent = updateBtnText();
 
 toggleBtn.addEventListener("click", function () {
-
-    var newText = toggleBtn.textContent;
-    for (const [key, value] of Object.entries(toggledViews)) {
-        console.log("key: " + key + " value: " + value)
-        if (toggleBtn.textContent === key) {
-            for (var v of value) {
-                v.classList.add("hide");
-            }
-        } else {
-            newText = key;
-            for (var v of value) {
-                console.log("class: " + v.classList)
-                v.classList.remove("hide");
-            }
-        }
-    }
-    toggleBtn.textContent = newText;
+    isDaily = !isDaily;
+    updateView(isDaily, curType, isCN);
 });
+
+
+function updateView(isDaily, type, isCN) {
+    updateTitle();
+    toggleBtn.textContent = updateBtnText();
+    type = isCN ? getType(type): type;
+    var id = getLowerFreq(isDaily) + "_" + type + "_" + getLan();
+    var svg_id = id + svg_suffix;
+    var select_id = id + select_suffix;
+    var svg = domMap[svg_id];
+    var select = domMap[select_id];
+    console.log("svg: " + svg_id + " select: " + select_id);
+    for (const [key, value] of Object.entries(domMap)) {
+        if (key === svg_id || key === select_id) {
+            console.log("key: " + key);
+            value.classList.remove("hide");
+        } else value.classList.add("hide");
+    }
+}
+
+function getType(cnType) {
+    for (const [key, value] of Object.entries(lanMap.type)) {
+        if (cnType === value) return key;
+    }
+}
+
+function getFreq(cnFreq) {
+    for (const [key, value] of Object.entries(lanMap.type)) {
+        if (cnFreq === value) return key.toLowerCase();
+    }
+}
+
+function getLan() {
+    return isCN ? "cn" : "en";
+}
+
+function getLowerFreq(isDaily) {
+    return isDaily ? filenames[1].toLowerCase() : filenames[0].toLowerCase();
+}
+
+function getUpperFreq(isDaily) {
+    return isDaily ? filenames[1] : filenames[0];
+}
+
+function updateBtnText() {
+    return isCN ? lanMap.freq[getUpperFreq(isDaily)] : getUpperFreq(isDaily);
+}
+
+function updateTitle() {
+    const t = document.querySelector("#title");
+    t.text = lanMap.title[getLan()];
+}
+
+function updateOptions() {
+    for (const [key, value] of Object.entries(optionMap)) {
+        var v = isCN ? lanMap.type[key] : key;
+        value.value = v;
+        value.text = v;
+    }
+}
