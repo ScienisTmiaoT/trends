@@ -55,6 +55,8 @@ var isDaily = false;
 var isCN = true;
 updateTitle()
 var curType = "movie";
+var cnNameList = [];
+var enNameList = [];
 
 var config = []
 var setDefault = true;
@@ -72,7 +74,8 @@ for (var f of filenames) {
                 is_daily: is_daily,
                 date_format: is_daily ? "%Y-%m-%d" : "%Y-%m",
                 defaultGroup: defaultGroups[t][la],
-                is_default: setDefault
+                is_default: setDefault,
+                is_cn: la === 'cn'
             }
             if (setDefault) {
                 isDaily = is_daily;
@@ -86,10 +89,11 @@ for (var f of filenames) {
 
 const checkBox = document.querySelector("#dn");
 checkBox.addEventListener("change", function() {
+    var old_id = getId(isCN, isDaily, curType);
     isCN = !isCN;
     curType = isCN ? lanMap.type[curType] : getType(curType);
     updateOptions();
-    updateView(isDaily, curType, isCN);
+    updateView(isDaily, curType, isCN, old_id, true);
 });
 
 const typeSelect = document.querySelector("#type_select");
@@ -103,7 +107,7 @@ for (var c of config) {
 
 typeSelect.addEventListener("change", function() {
     curType = typeSelect.value;
-    updateView(isDaily, curType, isCN);
+    updateView(isDaily, curType, isCN, "", false);
 });
 
 optionMap = {};
@@ -117,7 +121,7 @@ for (var t of types) {
 }
 
 
-function draw(csv_url, parent_id, select_id, svg_id, is_daily, date_format, defaultGroup, is_default) {
+function draw(csv_url, parent_id, select_id, svg_id, is_daily, date_format, defaultGroup, is_default, is_cn) {
     var init_select_id = select_id;
     parent_id = "#" + parent_id;
     select_id = "#" + select_id;
@@ -157,6 +161,13 @@ function draw(csv_url, parent_id, select_id, svg_id, is_daily, date_format, defa
                     }
                     if (!updated) {
                         allGroup.push(key);
+                        if (is_daily) {
+                            if (is_cn) {
+                                cnNameList.push(key);
+                            } else {
+                                enNameList.push(key);
+                            }
+                        }
                     }
                 }
             }
@@ -263,29 +274,38 @@ function draw(csv_url, parent_id, select_id, svg_id, is_daily, date_format, defa
 }
 
 for (var c of config) {
-    draw(c.csv_url, c.parent_id, c.select_id, c.svg_id, c.is_daily, c.date_format, c.defaultGroup, c.is_default);
+    draw(c.csv_url, c.parent_id, c.select_id, c.svg_id, c.is_daily, c.date_format, c.defaultGroup, c.is_default, c.is_cn);
 }
 
 const toggleBtn = document.querySelector("#switchBtn");
 toggleBtn.textContent = updateBtnText();
 
 toggleBtn.addEventListener("click", function () {
+    var old_id = getId(isCN, isDaily, curType);
     isDaily = !isDaily;
-    updateView(isDaily, curType, isCN);
+    updateView(isDaily, curType, isCN, old_id, false);
 });
 
 
-function updateView(isDaily, type, isCN) {
+function updateView(isDaily, type, isCN, old_id, change_language) {
     updateTitle();
     toggleBtn.textContent = updateBtnText();
-    type = isCN ? getType(type): type;
-    var id = getLowerFreq(isDaily) + "_" + type + "_" + getLan();
+    var id = getId(isCN, isDaily, type);
     var svg_id = id + svg_suffix;
     var select_id = id + select_suffix;
+    var old_select_id = (old_id !== "") ? (old_id + select_suffix) : "";
     var svg = domMap[svg_id];
     var select = domMap[select_id];
+    var new_value = select.value;
+    if (old_select_id !== "") {
+        var old_v = domMap[old_select_id].value;
+        if (change_language) {
+            new_value = !isCN ? toEnName(old_v) : toCnName(old_v);
+        } else new_value = old_v;
+    }
     // refresh the view with selected group
-    updateFuncMap[select_id](select.value);
+    updateFuncMap[select_id](new_value);
+    select.value = new_value;
     // console.log("svg: " + svg_id + " select: " + select_id);
     for (const [key, value] of Object.entries(domMap)) {
         if (key === svg_id || key === select_id) {
@@ -311,6 +331,10 @@ function getLan() {
     return isCN ? "cn" : "en";
 }
 
+function getLanByVal(isCn) {
+    return isCn ? "cn" : "en";
+}
+
 function getLowerFreq(isDaily) {
     return isDaily ? filenames[1].toLowerCase() : filenames[0].toLowerCase();
 }
@@ -334,4 +358,26 @@ function updateOptions() {
         value.value = v;
         value.text = v;
     }
+}
+
+function toEnName(name) {
+    for (const [i, value] of cnNameList.entries()) {
+        if (value === name) {
+            return enNameList[i];
+        }
+    }
+}
+
+function toCnName(name) {
+    for (const [i, value] of enNameList.entries()) {
+        if (value === name) {
+            return cnNameList[i];
+        }
+    }
+}
+
+function getId(is_cn, is_daily, type) {
+    type = is_cn ? getType(type): type;
+    var id = getLowerFreq(is_daily) + "_" + type + "_" + getLanByVal(is_cn);
+    return id;
 }
