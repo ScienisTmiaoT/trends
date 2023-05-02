@@ -17,6 +17,7 @@ select_suffix = "_select";
 domMap = {
 
 };
+var updateFuncMap = {};
 
 defaultGroups = {
     "movie": {
@@ -117,6 +118,7 @@ for (var t of types) {
 
 
 function draw(csv_url, parent_id, select_id, svg_id, is_daily, date_format, defaultGroup, is_default) {
+    var init_select_id = select_id;
     parent_id = "#" + parent_id;
     select_id = "#" + select_id;
     // append the svg object to the body of the page
@@ -247,6 +249,8 @@ function draw(csv_url, parent_id, select_id, svg_id, is_daily, date_format, defa
                 })
         }
 
+        updateFuncMap[init_select_id] = update;
+
         // When the button is changed, run the updateChart function
         d3.select(select_id).on("change", function (d) {
             // recover the option that has been chosen
@@ -280,10 +284,12 @@ function updateView(isDaily, type, isCN) {
     var select_id = id + select_suffix;
     var svg = domMap[svg_id];
     var select = domMap[select_id];
-    console.log("svg: " + svg_id + " select: " + select_id);
+    // refresh the view with selected group
+    updateFuncMap[select_id](select.value);
+    // console.log("svg: " + svg_id + " select: " + select_id);
     for (const [key, value] of Object.entries(domMap)) {
         if (key === svg_id || key === select_id) {
-            console.log("key: " + key);
+            // console.log("key: " + key);
             value.classList.remove("hide");
         } else value.classList.add("hide");
     }
