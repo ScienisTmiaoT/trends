@@ -18,6 +18,7 @@ select_suffix = "_select";
 domMap = {};
 var updateFuncMap = {};
 
+// unused
 defaultGroups = {
     "movie": {
         "cn": "巴斯特·基顿",
@@ -138,6 +139,7 @@ function drive(nameMap) {
             var allGroup = []
             var updated = false
             var maxY = 0
+            var setDefaultGroup = false;
             for (var i of data) {
                 for (const [key, value] of Object.entries(i)) {
                     var v = parseInt(value)
@@ -147,6 +149,10 @@ function drive(nameMap) {
                         }
                         if (!updated) {
                             allGroup.push(key);
+                        }
+                        if (!setDefaultGroup) {
+                            defaultGroup = key
+                            setDefaultGroup = true;
                         }
                     }
                 }
